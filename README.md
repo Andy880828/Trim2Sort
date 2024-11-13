@@ -1,3 +1,9 @@
+![image](https://github.com/Andy880828/Trim2Sort/blob/9ba7b1d031eb858739b8b20be1cf14268afed621/Trim2Sort.png)
+Trim2Sort設計來大量處理fastq資料(與單筆的Sanger定序資料)，需先備有:
+1. Usearch。
+2. 建置且映射好的sequence database。
+3. Excel程式(用來開啟輸出檔案)，也可以用開源的其他免費試算表軟體開啟。
+
 20230529
 將中文資料庫複製到這個資料夾了。
 寫了將中文資料合併上去的小script。
