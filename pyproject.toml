@@ -1,0 +1,15 @@
+[project]
+name = "trim2sort-ver3-0-0"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "biopython>=1.86",
+    "customtkinter>=5.2.2",
+    "natsort>=8.4.0",
+    "numpy>=2.3.4",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.3",
+    "pillow>=12.0.0",
+]

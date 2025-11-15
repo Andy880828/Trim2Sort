@@ -1,0 +1,47 @@
+20230529(勛)
+將中文資料庫複製到這個資料夾了。
+寫了將中文資料合併上去的小script。
+用pip安裝了openpyxl跟jinja2。
+將資料庫存成xlsx格式並把裡面的colname的第一個字母都改成大寫。
+臨時將中文小script合併進了ngs.py(為了讓顏色維持)，
+加入Line23的ref = "D:\\Trim2Sort_ver3.0.0\\ref_ver3_0408-3.xlsx"，
+還加了Line501、524、526、528
+但之後可能要改，需要再寫GUI部分並把self多擴充一個self.ref.entry部分，再把以上內容還原。
+
+20230607(晴)
+合併建好的資料庫(這次合併常見的汙染人&牛)
+dblist"要合併的檔案名稱"，out 輸出庫檔名。
+blastdb_aliastool -dblist "contamination_12S 12S_Osteichthyes_db" -dbtype nucl -out 12S_Osteichthyes_db -title "12S_Osteichthyes_db"
+
+2023.07.11(晴)
+更新中文資料庫
+
+20230826(晴)
+在sanger.py增加中文資料庫(加在283-291，寫得很隨便，閒閒沒事可在精簡)
+
+2023.08.31(晴)
+更新中文資料庫
+
+20230914(晴)
+sanger使用Biopython及Trimmomatic方法進行序列修剪，以避免修剪不當導致的序列錯配問題，輸入檔案格式須為ab1檔，並以檔案名稱作為sample id。
+原cutadapt方法保留在sanger_ori_0914中
+
+20230915(晴)
+ngs修復Dupe及Filter的read及ratio不顯示的問題
+
+20231005(晴)
+更新中文資料庫
+
+20240424(晴)
+更新COI_Osteichthyes及12S_Osteichthyes 序列資料庫，. 修正sanger中Trimmomatic依照不同primer進行序列修剪
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+之後想修改的部分：
+1. 目前中文資料庫中的valid name部分有誤，需要邊使用邊核對校正
+2. 希望修改sanger.py中的排序方式，讓排序更主觀、直覺
+3. sanger.py目前執行時間偏久，需要再精簡
+4. ngs.py希望加入dada2的去噪方法
+5. 希望可以使用絕對路徑，使使用者可以在任何路徑放sample及output(ex自己的隨身碟)
+
+
