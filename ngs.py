@@ -7,6 +7,7 @@ import shutil
 import pandas as pd
 import numpy as np
 import natsort
+import gc
 
 def Highlight(row):
     condition = row['Stat']
@@ -97,16 +98,28 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 自動找出目錄中的cutadapt.exe及usearch.exe
+        cutadapt_exe = os.path.join(root_dir, "cutadapt.exe")
+        usearch_exe = os.path.join(root_dir, "usearch.exe")
+        
         self.cutadapt_path = tk.StringVar()
         self.usearch_path = tk.StringVar()
         self.blastn_path = tk.StringVar()
         self.database_path = tk.StringVar()
         self.samples_path = tk.StringVar()
         self.outputs_path = tk.StringVar()
+        
+        # Auto-set paths if files exist
+        if os.path.exists(cutadapt_exe):
+            self.cutadapt_path.set(cutadapt_exe)
+        if os.path.exists(usearch_exe):
+            self.usearch_path.set(usearch_exe)
 
         blastn_info = tk.StringVar(value="Step3: Select the directory of Blastn.exe")
-        cutadapt_info = tk.StringVar(value="Step1: Select the directory of Cutadapt.exe")
-        usearch_info = tk.StringVar(value="Step2: Select the directory of Usearch.exe")
+        cutadapt_info = tk.StringVar(value="Step1: Cutadapt.exe (Auto-detected from root directory)")
+        usearch_info = tk.StringVar(value="Step2: Usearch.exe (Auto-detected from root directory)")
         database_info = tk.StringVar(value="Step4: Select the folder directory of Database")
         samples_info = tk.StringVar(value="Step5: Select the folder directory of Samples")
         outputs_info = tk.StringVar(value="Step6: Select the folder directory of Outputs")
@@ -402,27 +415,32 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         self.outputs_path.set(foldername)
 
     def Analyse(self):
-        #Remane samples
+        #Get input files (no renaming)
         input_list = os.listdir(str(self.samples_entry.get() + '/'))
-        for num in range(len(input_list)):
-            label_num = str(num).rjust(3,'0')
-            oldname = input_list[num]
-            newname = label_num + '_' + oldname
-            os.rename(self.samples_entry.get() + '/' + oldname, self.samples_entry.get() + '/' + newname)
-        
-        input_list = os.listdir(str(self.samples_entry.get() + '/' ))
-        input_list.sort(key=lambda x: int(x.split('_')[0]))
+        input_list = natsort.natsorted(input_list)
 
-        #Create output folders
+        #Create output folders (auto cleanup)
+        # 先強制垃圾回收，確保所有檔案句柄都已釋放
+        gc.collect()
+        
         folders = ["A_primer_trimming", "B_merged", "C_quality", "D_length", "E_uniques", "F_OTUs", "G_OTUtable", "H_blasts", "I_sorted_blasts"]
         for folder in folders:
             path = os.path.join(str(self.outputs_entry.get()), folder)
-            if not os.path.exists(path):
-                os.makedirs(path)
-                globals()['{}'.format(folder)] = path
-        else:
-            shutil.rmtree(path)
-            os.makedirs(path)
+            if os.path.exists(path):
+                try:
+                    shutil.rmtree(path)
+                except PermissionError:
+                    # 如果無法刪除，嘗試清空內容
+                    for item in os.listdir(path):
+                        item_path = os.path.join(path, item)
+                        try:
+                            if os.path.isdir(item_path):
+                                shutil.rmtree(item_path, ignore_errors=True)
+                            else:
+                                os.remove(item_path)
+                        except:
+                            pass
+            os.makedirs(path, exist_ok=True)
             globals()['{}'.format(folder)] = path    
 
         Sample_Size = len(input_list)//2
@@ -432,19 +450,19 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         for i in range(0, Sample_Size*2, 2):
             self.TrimPrimers(input_list[i],input_list[i+1])
         A_primer_trimming_folder_forsort = os.listdir(A_primer_trimming)
-        A_primer_trimming_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))   
+        A_primer_trimming_folder_forsort = natsort.natsorted(A_primer_trimming_folder_forsort)   
 
         #Merge pair-ends
         for i in range(0, Sample_Size*2, 2):
             self.MergePairs(A_primer_trimming_folder_forsort[i],A_primer_trimming_folder_forsort[i+1])
         B_merged_folder_forsort = os.listdir(B_merged)
-        B_merged_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))
+        B_merged_folder_forsort = natsort.natsorted(B_merged_folder_forsort)
 
         #Trim unqualified nucleotides
         for i in range(0,Sample_Size):
             self.QualityControl(B_merged_folder_forsort[i])
         qualified_folder_forsort = os.listdir(C_quality)
-        qualified_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))
+        qualified_folder_forsort = natsort.natsorted(qualified_folder_forsort)
         
         #Adjust lengh of sequence & Delete 0 byte file
         for i in range(0,Sample_Size):
@@ -463,69 +481,136 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
 
         D_length_folder_forsort = os.listdir(D_length)
         Sample_Size_1 = len(D_length_folder_forsort)
-        D_length_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))
+        D_length_folder_forsort = natsort.natsorted(D_length_folder_forsort)
         
         #Cluster sequence into OTU
         for i in range(0,Sample_Size_1):
             self.Cluster(D_length_folder_forsort[i])
         E_uniques_folder_forsort = os.listdir(E_uniques)
-        E_uniques_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))
+        E_uniques_folder_forsort = natsort.natsorted(E_uniques_folder_forsort)
         for i in range(0,Sample_Size_1):
             self.OTU(E_uniques_folder_forsort[i])
         OTU_folder_forsort = os.listdir(F_OTUs)
-        OTU_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))
+        OTU_folder_forsort = natsort.natsorted(OTU_folder_forsort)
         
         #Make OTUtable
         for i in range(0,Sample_Size_1):
             self.OTUtable(B_merged_folder_forsort[i], OTU_folder_forsort[i])
         OTUtab_folder_forsort = os.listdir(G_OTUtable)
-        OTUtab_folder_forsort.sort(key=lambda x: int(x.split('_')[0])) 
+        OTUtab_folder_forsort = natsort.natsorted(OTUtab_folder_forsort) 
         
         #Rename OTUtable
         for i in range(1, Sample_Size_1*2+1, 2):
             self.RenameOTUtable(OTUtab_folder_forsort[i])
         OTU_folder_forsort = os.listdir(F_OTUs)
-        OTU_folder_forsort.sort(key=lambda x: int(x.split('_')[0]))
+        OTU_folder_forsort = natsort.natsorted(OTU_folder_forsort)
         
         #Blast OTU with database
         os.chdir(str(self.database_entry.get()))
         for i in range(0,Sample_Size_1):
             self.Blast(OTU_folder_forsort[i]) 
         
-        #Combine blast results with OTUtable
+        # Combine blast results with OTUtable
         os.chdir(H_blasts)
         txts = sorted(os.listdir(H_blasts))
         os.chdir(G_OTUtable)
         reads = sorted(os.listdir(G_OTUtable))
         df_ref = pd.read_excel(ref)
-        for n, i  in zip(range(0, len(txts)), range(1, len(reads), 2)):
-            if txts[n].endswith('.txt'):
-                original_data = pd.read_csv(H_blasts + '/' + txts[n], engine='python', header=None, sep='\t', encoding='utf-8', names=['OTU', 'Identity', 'Coverage', 'Scientific_name', 'Accession_number'])
-                reads_data = pd.read_csv(reads[i], engine='python', header=None, sep='\t', encoding='utf-8', names=['OTU', 'Reads'], skiprows=1)
-                total_reads = reads_data.Reads.sum()
-                csv_data = pd.merge(original_data, reads_data)
-                ratio = csv_data.Reads / float(total_reads)
-                csv_data.insert(6, column='Ratio', value=ratio)
-                csv_data.loc[csv_data['Identity'] >= 97, 'Stat'] = '*DUPE*'
-                csv_data.loc[csv_data['Identity'] < 97, 'Stat'] = '*FILTERED*'
-                # if (csv_data['Identity'] >= 97).any():
-                #     csv_data['Stat'] = '*FILTERED*'
-                # elif (csv_data['Identity'] < 97).any():
-                #     csv_data['Stat'] = '*DUPE*'
 
-                drop_duplicate_data = csv_data.drop_duplicates(subset=['OTU', 'Scientific_name'], keep='first').copy()
-                drop_duplicate_data = drop_duplicate_data.sort_values(by='Identity', ascending=False)
-                drop_duplicate_data.loc[drop_duplicate_data.duplicated(subset=['OTU'], keep='first'), ['Reads', 'Ratio']] = ''
-                clean_data = drop_duplicate_data[drop_duplicate_data['Stat'] == '*DUPE*'].groupby('OTU')['Identity'].idxmax()
-                drop_duplicate_data.loc[clean_data, 'Stat'] = ''
-              
-                final_csv = drop_duplicate_data[['OTU', 'Identity', 'Coverage', 'Scientific_name', 'Stat', 'Reads', 'Ratio', 'Accession_number']]
+        for n, i in zip(range(0, len(txts)), range(1, len(reads), 2)):
+            if txts[n].endswith('.txt'):
+                original_data = pd.read_csv(
+                    H_blasts + '/' + txts[n], 
+                    engine='python', 
+                    header=None, 
+                    sep='\t', 
+                    encoding='utf-8', 
+                    names=['OTU', 'Identity', 'Coverage', 'Scientific_name', 'Accession_number']
+                )
+                
+                # 讀取 reads 資料
+                reads_data = pd.read_csv(
+                    reads[i], 
+                    engine='python', 
+                    header=None, 
+                    sep='\t', 
+                    encoding='utf-8', 
+                    names=['OTU', 'Reads'], 
+                    skiprows=1
+                )
+                total_reads = reads_data.Reads.sum()
+                
+                # 分離符合條件和不符合條件的資料
+                grouped_otu = (original_data[original_data.Identity >= 97]).reset_index(drop=True)
+                drop_filtered = original_data[original_data.Identity < 97].copy()
+                drop_filtered['Stat'] = '*FILTERED*'
+                drop_filtered = drop_filtered.drop_duplicates(subset=['OTU', 'Scientific_name'], keep='first')
+                
+                # 處理符合條件的資料（Identity >= 97）
+                grouped_otu['Stat'] = np.where(grouped_otu['OTU'].duplicated(), '*DUPE*', '')
+                drop_dupe = grouped_otu[grouped_otu.Stat == '*DUPE*']
+                drop_dupe = drop_dupe.drop_duplicates(subset=['OTU', 'Scientific_name'], keep='first')
+                clean_data = grouped_otu.drop_duplicates(subset=['OTU'], keep='first')
+                
+                # 合併 reads 到符合條件的資料
+                csv_data = pd.merge(clean_data, reads_data)
+                ratio = csv_data.Reads / float(total_reads)
+                csv_data.insert(7, column='Ratio', value=ratio)
+                
+                # 組合主要資料（包含 clean_data 和 drop_dupe）
+                main_data = pd.concat([csv_data, drop_dupe], axis=0, ignore_index=True)
+                main_data = main_data.sort_values(['OTU', 'Stat'], ignore_index=True)
+                main_data = main_data.groupby('OTU', include_groups=False).apply(
+                    lambda x: x.drop_duplicates(subset=['Scientific_name'], keep='first')
+                ).reset_index(drop=True)
+                
+                # 找出哪些 OTU 有符合條件的資料
+                otus_with_valid_data = set(main_data['OTU'].unique())
+                
+                # 處理 FILTERED 資料
+                # 1. 找出完全沒有符合條件的 OTU（所有 row 都是 FILTERED）
+                all_filtered_otus = set(drop_filtered['OTU'].unique()) - otus_with_valid_data
+                
+                # 2. 對於完全 FILTERED 的 OTU，保留第一個 row 並加上 reads/ratio
+                filtered_with_reads = drop_filtered[drop_filtered['OTU'].isin(all_filtered_otus)].copy()
+                filtered_with_reads = filtered_with_reads.drop_duplicates(subset=['OTU'], keep='first')
+                filtered_with_reads = pd.merge(filtered_with_reads, reads_data, on='OTU')
+                ratio_filtered = filtered_with_reads.Reads / float(total_reads)
+                filtered_with_reads['Ratio'] = ratio_filtered
+                
+                # 3. 對於有符合條件資料的 OTU，其 FILTERED rows 不顯示 reads/ratio
+                filtered_without_reads = drop_filtered[~drop_filtered['OTU'].isin(all_filtered_otus)].copy()
+                filtered_without_reads['Reads'] = np.nan
+                filtered_without_reads['Ratio'] = np.nan
+                
+                # 合併所有 FILTERED 資料
+                all_filtered = pd.concat([filtered_with_reads, filtered_without_reads], axis=0, ignore_index=True)
+                
+                # 合併所有資料
+                final_csv = pd.concat([main_data, all_filtered], axis=0, ignore_index=True)
+                final_csv = final_csv[['OTU', 'Identity', 'Coverage', 'Scientific_name', 'Stat', 'Reads', 'Ratio', 'Accession_number']]
                 final_csv = final_csv.sort_values('OTU', key=natsort.natsort_keygen())
+                
+                # 合併中文名稱
                 final_zh_csv = final_csv.merge(df_ref, how='left', on='Scientific_name')
-                final_csv = final_csv.style.apply(Highlight, axis=1)
-                final_zh_csv = final_zh_csv.style.apply(Highlight, axis=1)
-                final_csv.to_excel(I_sorted_blasts + '/' + '{}'.format(reads[i].split('.')[0]) + '.xlsx', engine='openpyxl', index=False, encoding='utf-8')
-                final_zh_csv.to_excel(I_sorted_blasts + '/' + '{}_zh_added'.format(reads[i].split('.')[0]) + '.xlsx', engine='openpyxl', index=False, encoding='utf-8')
+                
+                # 套用樣式
+                final_csv_styled = final_csv.style.apply(Highlight, axis=1)
+                final_zh_csv_styled = final_zh_csv.style.apply(Highlight, axis=1)
+                
+                # 使用 ExcelWriter context manager 確保檔案正確關閉
+                excel_path1 = os.path.join(I_sorted_blasts, '{}'.format(reads[i].split('.')[0]) + '.xlsx')
+                excel_path2 = os.path.join(I_sorted_blasts, '{}_zh_added'.format(reads[i].split('.')[0]) + '.xlsx')
+                
+                with pd.ExcelWriter(excel_path1, engine='openpyxl') as writer:
+                    final_csv_styled.to_excel(writer, index=False, sheet_name='Sheet1')
+                
+                with pd.ExcelWriter(excel_path2, engine='openpyxl') as writer:
+                    final_zh_csv_styled.to_excel(writer, index=False, sheet_name='Sheet1')
+                
+                # 強制垃圾回收以釋放檔案句柄
+                del final_csv_styled, final_zh_csv_styled
+                gc.collect()
         
         # os.chdir(I_sorted_blasts)
         # excel_lists = os.listdir(I_sorted_blasts)

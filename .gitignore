@@ -12,14 +12,6 @@ __pycache__/
 # UV 鎖定文件（如果不想追蹤）
 # uv.lock
 
-# 其他常見的 Python 相關文件
-*.egg-info/
-dist/
-build/
-.pytest_cache/
-.coverage
-htmlcov/
-
 # IDE 相關
 .vscode/
 .idea/
