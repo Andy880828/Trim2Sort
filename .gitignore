@@ -8,6 +8,7 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+.ruff_cache/
 
 # UV 鎖定文件（如果不想追蹤）
 # uv.lock
