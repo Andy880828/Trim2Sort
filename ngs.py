@@ -103,6 +103,7 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         # 自動找出目錄中的cutadapt.exe及usearch.exe
         cutadapt_exe = os.path.join(root_dir, "cutadapt.exe")
         usearch_exe = os.path.join(root_dir, "usearch.exe")
+        blastn_exe = os.path.join(root_dir, "blast+", "bin", "blastn.exe")
         
         self.cutadapt_path = tk.StringVar()
         self.usearch_path = tk.StringVar()
@@ -116,8 +117,10 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
             self.cutadapt_path.set(cutadapt_exe)
         if os.path.exists(usearch_exe):
             self.usearch_path.set(usearch_exe)
+        if os.path.exists(blastn_exe):
+            self.blastn_path.set(blastn_exe)
 
-        blastn_info = tk.StringVar(value="Step3: Select the directory of Blastn.exe")
+        blastn_info = tk.StringVar(value="Step3: Blastn.exe (Auto-detected from root directory)")
         cutadapt_info = tk.StringVar(value="Step1: Cutadapt.exe (Auto-detected from root directory)")
         usearch_info = tk.StringVar(value="Step2: Usearch.exe (Auto-detected from root directory)")
         database_info = tk.StringVar(value="Step4: Select the folder directory of Database")
@@ -560,7 +563,7 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
                 # 組合主要資料（包含 clean_data 和 drop_dupe）
                 main_data = pd.concat([csv_data, drop_dupe], axis=0, ignore_index=True)
                 main_data = main_data.sort_values(['OTU', 'Stat'], ignore_index=True)
-                main_data = main_data.groupby('OTU', include_groups=False).apply(
+                main_data = main_data.groupby('OTU').apply(
                     lambda x: x.drop_duplicates(subset=['Scientific_name'], keep='first')
                 ).reset_index(drop=True)
                 
