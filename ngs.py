@@ -56,7 +56,7 @@ class ConfigWindow(customtkinter.CTkToplevel):
         super().__init__(parent, *args, **kwargs)
         self.parent = parent
         self.title("Configuration")
-        self.geometry("490x500")
+        self.geometry("480x480")
         self.configure(fg_color="#091235")
         self.resizable(False, False)
 
