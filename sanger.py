@@ -12,7 +12,24 @@ from Bio import SeqIO
 from PIL import Image
 
 my_image = customtkinter.CTkImage(light_image=Image.open("Trim2Sort_icon.png"), size=(128, 72))
-ref = "C:\\Users\\andy0\\Desktop\\Trim2Sort_ver3.0.0\\ref_ver6_0918.xlsx"
+
+
+def find_latest_ref_file():
+    """尋找最新的 ref_ 開頭的 xlsx 檔案"""
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    ref_files = []
+    for file in os.listdir(root_dir):
+        if file.startswith("ref_") and file.endswith(".xlsx"):
+            file_path = os.path.join(root_dir, file)
+            ref_files.append((file_path, os.path.getmtime(file_path)))
+
+    if ref_files:
+        # 根據修改時間排序, 返回最新的
+        ref_files.sort(key=lambda x: x[1], reverse=True)
+        return ref_files[0][0]
+    return ""
+
+
 # def Highlight(row):
 #     condition = row['identity']
 
@@ -330,7 +347,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
         )
         os.rename(old_file_name, new_file_name)
 
-        df_ref = pd.read_excel(ref)
+        ref_path = find_latest_ref_file()
+        df_ref = pd.read_excel(ref_path)
         df_ref.set_index("Scientific_name", inplace=True)
         df_input = pd.read_excel(new_file_name)
         df_input.set_index("Scientific_name", inplace=True)

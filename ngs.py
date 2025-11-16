@@ -3,7 +3,7 @@ import os
 import shutil
 import tkinter as tk
 import warnings
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 import customtkinter
 import natsort
@@ -25,9 +25,266 @@ def Highlight(row):
     return [css] * len(row)
 
 
-ref = "C:\\Users\\andy0\\Desktop\\Trim2Sort_ver3.0.0\\ref_ver6_0918.xlsx"
-
 my_image = customtkinter.CTkImage(light_image=Image.open("Trim2Sort_icon.png"), size=(128, 72))
+
+
+def reverse_complement(seq):
+    """計算反向互補序列"""
+    complement = {"A": "T", "T": "A", "C": "G", "G": "C"}
+    return "".join(complement.get(base, base) for base in reversed(seq))
+
+
+def find_latest_ref_file():
+    """尋找最新的 ref_ 開頭的 xlsx 檔案"""
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    ref_files = []
+    for file in os.listdir(root_dir):
+        if file.startswith("ref_") and file.endswith(".xlsx"):
+            file_path = os.path.join(root_dir, file)
+            ref_files.append((file_path, os.path.getmtime(file_path)))
+
+    if ref_files:
+        # 根據修改時間排序, 返回最新的
+        ref_files.sort(key=lambda x: x[1], reverse=True)
+        return ref_files[0][0]
+    return ""
+
+
+# Config設定視窗
+class ConfigWindow(customtkinter.CTkToplevel):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.parent = parent
+        self.title("Configuration")
+        self.geometry("490x500")
+        self.configure(fg_color="#091235")
+        self.resizable(False, False)
+
+        # 暫存配置值
+        self.temp_config = {}
+
+        # Primers Section
+        primer_label = customtkinter.CTkLabel(self)
+        primer_label.configure(text="Primers:", text_color="#DCF3F0", font=("Consolas", 12, "bold"))
+        primer_label.grid(row=0, column=0, padx=20, pady=(15, 3), sticky="w")
+
+        self.primer_mode = tk.StringVar(value=parent.config["primer_mode"])
+        primer_combo = customtkinter.CTkComboBox(
+            self,
+            variable=self.primer_mode,
+            values=["MiFish-U", "Manual"],
+            width=370,
+            height=25,
+            border_width=2,
+            corner_radius=8,
+            fg_color="#2B4257",
+            text_color="#DCF3F0",
+            button_color="#4C6A78",
+            button_hover_color="#5D7B8A",
+            dropdown_fg_color="#2B4257",
+            dropdown_text_color="#DCF3F0",
+            dropdown_hover_color="#4C6A78",
+            font=("Consolas", 12, "bold"),
+            command=self.on_primer_mode_change,
+        )
+        primer_combo.grid(row=1, column=0, columnspan=2, padx=20, pady=(0, 5), sticky="w")
+
+        # Forward Primer
+        forward_label = customtkinter.CTkLabel(self)
+        forward_label.configure(
+            text="Forward Primer:", text_color="#DCF3F0", font=("Consolas", 12, "bold")
+        )
+        forward_label.grid(row=2, column=0, padx=20, pady=(8, 3), sticky="w")
+
+        self.forward_primer = tk.StringVar(value=parent.config["forward_primer"])
+        self.forward_entry = customtkinter.CTkEntry(self)
+        self.forward_entry.configure(
+            textvariable=self.forward_primer,
+            text_color="#DCF3F0",
+            width=440,
+            height=25,
+            border_width=2,
+            corner_radius=8,
+            fg_color="#2B4257",
+            font=("Consolas", 12, "bold"),
+        )
+        self.forward_entry.grid(row=3, column=0, columnspan=2, padx=20, pady=(0, 5), sticky="w")
+
+        # Reverse Primer
+        reverse_label = customtkinter.CTkLabel(self)
+        reverse_label.configure(
+            text="Reverse Primer:", text_color="#DCF3F0", font=("Consolas", 12, "bold")
+        )
+        reverse_label.grid(row=4, column=0, padx=20, pady=(8, 3), sticky="w")
+
+        self.reverse_primer = tk.StringVar(value=parent.config["reverse_primer"])
+        self.reverse_entry = customtkinter.CTkEntry(self)
+        self.reverse_entry.configure(
+            textvariable=self.reverse_primer,
+            text_color="#DCF3F0",
+            width=440,
+            height=25,
+            border_width=2,
+            corner_radius=8,
+            fg_color="#2B4257",
+            font=("Consolas", 12, "bold"),
+        )
+        self.reverse_entry.grid(row=5, column=0, columnspan=2, padx=20, pady=(0, 5), sticky="w")
+
+        # Quality Threshold
+        quality_label = customtkinter.CTkLabel(self)
+        quality_label.configure(
+            text="Quality Threshold:", text_color="#DCF3F0", font=("Consolas", 12, "bold")
+        )
+        quality_label.grid(row=6, column=0, padx=20, pady=(8, 3), sticky="w")
+
+        self.quality_threshold = tk.StringVar(value=str(parent.config["quality_threshold"]))
+        quality_entry = customtkinter.CTkEntry(self)
+        quality_entry.configure(
+            textvariable=self.quality_threshold,
+            text_color="#DCF3F0",
+            width=440,
+            height=25,
+            border_width=2,
+            corner_radius=8,
+            fg_color="#2B4257",
+            font=("Consolas", 12, "bold"),
+        )
+        quality_entry.grid(row=7, column=0, columnspan=2, padx=20, pady=(0, 5), sticky="w")
+
+        # Length Threshold
+        length_label = customtkinter.CTkLabel(self)
+        length_label.configure(
+            text="Length Threshold:", text_color="#DCF3F0", font=("Consolas", 12, "bold")
+        )
+        length_label.grid(row=8, column=0, padx=20, pady=(8, 3), sticky="w")
+
+        self.length_threshold = tk.StringVar(value=str(parent.config["length_threshold"]))
+        length_entry = customtkinter.CTkEntry(self)
+        length_entry.configure(
+            textvariable=self.length_threshold,
+            text_color="#DCF3F0",
+            width=440,
+            height=25,
+            border_width=2,
+            corner_radius=8,
+            fg_color="#2B4257",
+            font=("Consolas", 12, "bold"),
+        )
+        length_entry.grid(row=9, column=0, columnspan=2, padx=20, pady=(0, 5), sticky="w")
+
+        # Ref Path
+        ref_label = customtkinter.CTkLabel(self)
+        ref_label.configure(
+            text="Ref Path (Auto-detected):", text_color="#DCF3F0", font=("Consolas", 12, "bold")
+        )
+        ref_label.grid(row=10, column=0, padx=20, pady=(8, 3), sticky="w")
+
+        self.ref_path = tk.StringVar(value=parent.config["ref_path"])
+        self.ref_entry = customtkinter.CTkEntry(self)
+        self.ref_entry.configure(
+            textvariable=self.ref_path,
+            text_color="#DCF3F0",
+            width=350,
+            height=25,
+            border_width=2,
+            corner_radius=8,
+            fg_color="#2B4257",
+            font=("Consolas", 12, "bold"),
+        )
+        self.ref_entry.grid(row=11, column=0, padx=20, pady=(0, 5), sticky="w")
+
+        ref_button = customtkinter.CTkButton(self)
+        ref_button.configure(
+            width=70,
+            height=25,
+            border_width=0,
+            corner_radius=8,
+            text="SELECT",
+            fg_color="#2B4257",
+            text_color="#DCF3F0",
+            hover_color="#4C6A78",
+            font=("Consolas", 11, "bold"),
+            command=self.browse_ref,
+        )
+        ref_button.grid(row=11, column=1, padx=(0, 20), pady=(0, 5), sticky="w")
+
+        # OK and Cancel buttons
+        button_frame = customtkinter.CTkFrame(self, fg_color="transparent")
+        button_frame.grid(row=12, column=0, columnspan=2, padx=20, pady=(15, 15), sticky="ew")
+
+        ok_button = customtkinter.CTkButton(button_frame)
+        ok_button.configure(
+            width=220,
+            height=30,
+            border_width=0,
+            corner_radius=8,
+            text="OK",
+            fg_color="#2B4257",
+            text_color="#DCF3F0",
+            hover_color="#4C6A78",
+            font=("Consolas", 12, "bold"),
+            command=self.on_ok,
+        )
+        ok_button.pack(side="left", padx=(0, 10), expand=True, fill="x")
+
+        cancel_button = customtkinter.CTkButton(button_frame)
+        cancel_button.configure(
+            width=220,
+            height=30,
+            border_width=0,
+            corner_radius=8,
+            text="CANCEL",
+            fg_color="#2B4257",
+            text_color="#DCF3F0",
+            hover_color="#4C6A78",
+            font=("Consolas", 12, "bold"),
+            command=self.on_cancel,
+        )
+        cancel_button.pack(side="left", expand=True, fill="x")
+
+        # 初始化狀態
+        self.on_primer_mode_change(self.primer_mode.get())
+
+    def on_primer_mode_change(self, choice):
+        """當 Primer 模式改變時調整欄位狀態"""
+        if choice == "MiFish-U":
+            self.forward_primer.set("GTCGGTAAAACTCGTGCCAGC")
+            self.reverse_primer.set("CAAACTGGGATTAGATACCCCACTATG")
+            self.forward_entry.configure(state="disabled")
+            self.reverse_entry.configure(state="disabled")
+        else:  # Manual
+            self.forward_entry.configure(state="normal")
+            self.reverse_entry.configure(state="normal")
+
+    def browse_ref(self):
+        """瀏覽選擇 Ref 檔案"""
+        filename = filedialog.askopenfilename(
+            title="Select Reference File",
+            filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+        )
+        if filename:
+            self.ref_path.set(filename)
+
+    def on_ok(self):
+        """儲存配置並關閉視窗"""
+        self.parent.config["primer_mode"] = self.primer_mode.get()
+        self.parent.config["forward_primer"] = self.forward_primer.get()
+        self.parent.config["reverse_primer"] = self.reverse_primer.get()
+        try:
+            self.parent.config["quality_threshold"] = int(self.quality_threshold.get())
+        except ValueError:
+            self.parent.config["quality_threshold"] = 20
+        try:
+            self.parent.config["length_threshold"] = int(self.length_threshold.get())
+        except ValueError:
+            self.parent.config["length_threshold"] = 150
+        self.parent.config["ref_path"] = self.ref_path.get()
+        self.destroy()
+
+    def on_cancel(self):
+        """取消並關閉視窗"""
+        self.destroy()
 
 
 # NGS主畫面設定
@@ -120,6 +377,16 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         self.database_selector = tk.StringVar()
         self.samples_path = tk.StringVar()
         self.outputs_path = tk.StringVar()
+
+        # 配置參數
+        self.config = {
+            "primer_mode": "MiFish-U",
+            "forward_primer": "GTCGGTAAAACTCGTGCCAGC",
+            "reverse_primer": "CAAACTGGGATTAGATACCCCACTATG",
+            "quality_threshold": 20,
+            "length_threshold": 150,
+            "ref_path": find_latest_ref_file(),
+        }
 
         # Auto-set paths if files exist
         if os.path.exists(cutadapt_exe):
@@ -371,25 +638,55 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         self.instruction_label.grid(
             row=14, column=0, columnspan=2, padx=0, pady=(10, 0), sticky="ew"
         )
-        self.instruction_button = customtkinter.CTkButton(self)
-        self.instruction_button.configure(
-            width=80,
+
+        # 配置 grid 讓兩列各佔一半
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+
+        # Config 按鈕
+        self.config_button = customtkinter.CTkButton(self)
+        self.config_button.configure(
             height=25,
             border_width=0,
             corner_radius=8,
-            text="ANALYSE",
+            text="CONFIG",
             fg_color="#2B4257",
             text_color="#DCF3F0",
             hover_color="#4C6A78",
             font=("Consolas", 11, "bold"),
+            command=self.open_config,
+        )
+        self.config_button.grid(row=15, column=0, padx=(0, 5), sticky="ew")
+
+        # Analyse 按鈕 (一半長度, 黃色)
+        self.instruction_button = customtkinter.CTkButton(self)
+        self.instruction_button.configure(
+            height=25,
+            border_width=0,
+            corner_radius=8,
+            text="ANALYSE",
+            fg_color="#D4AF37",  # 黃色
+            text_color="#091235",
+            hover_color="#F4CF5A",  # 懸停時稍亮的黃色
+            font=("Consolas", 11, "bold"),
             command=self.Analyse,
         )
-        self.instruction_button.grid(row=15, column=0, columnspan=2, padx=0, sticky="ew")
+        self.instruction_button.grid(row=15, column=1, padx=(5, 0), sticky="ew")
+
+    def open_config(self):
+        """開啟配置視窗"""
+        config_window = ConfigWindow(self)
+        config_window.focus()
 
     def TrimPrimers(self, R1, R2):
+        forward = self.config["forward_primer"]
+        reverse = self.config["reverse_primer"]
+        rev_comp_forward = reverse_complement(forward)
+        rev_comp_reverse = reverse_complement(reverse)
+
         trimming = f"{self.cutadapt_entry.get()}\
-        -a GTCGGTAAAACTCGTGCCAGC...CAAACTGGGATTAGATACCCCACTATG \
-        -A CATAGTGGGGTATCTAATCCCAGTTTG...GCTGGCACGAGTTTTACCGAC \
+        -a {forward}...{reverse} \
+        -A {rev_comp_reverse}...{rev_comp_forward} \
         --discard-untrimmed \
         -o {A_primer_trimming}/{R1}_TRIMMED_R1.fastq \
         -p {A_primer_trimming}/{R2}_TRIMMED_R2.fastq {R1} {R2}"
@@ -403,16 +700,18 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         os.system(merging)
 
     def QualityControl(self, file):
+        quality_threshold = self.config["quality_threshold"]
         qualifying = f"{self.usearch_entry.get()}\
         -fastq_filter {B_merged}/{file} \
-        -fastq_truncqual 20 \
+        -fastq_truncqual {quality_threshold} \
         -fastqout {C_quality}/{file}_QUAL.fastq"
         os.system(qualifying)
 
     def FilterLength(self, file):
+        length_threshold = self.config["length_threshold"]
         D_length_filtering = f"{self.usearch_entry.get()}\
         -fastq_filter {C_quality}/{file} \
-        -fastq_minlen 150 \
+        -fastq_minlen {length_threshold} \
         -fastaout {D_length}/{file}_LENG.fasta"
         os.system(D_length_filtering)
 
@@ -471,6 +770,14 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         self.database_path.set(foldername)
         # 自動掃描資料夾中的 .fasta 和 .fas 檔案
         if foldername:
+            # 檢查 taxdb.btd 和 taxdb.bti 檔案
+            taxdb_btd_path = os.path.join(foldername, "taxdb.btd")
+            taxdb_bti_path = os.path.join(foldername, "taxdb.bti")
+            if not os.path.exists(taxdb_btd_path) or not os.path.exists(taxdb_bti_path):
+                messagebox.showwarning(
+                    "Warning", "no taxdb.btd & taxdb.bti files found, scientific name will be N/A"
+                )
+
             fasta_files = []
             try:
                 for file in os.listdir(foldername):
@@ -611,7 +918,7 @@ class NGS_ContentFrame(customtkinter.CTkFrame):
         txts = sorted(os.listdir(H_blasts))
         os.chdir(G_OTUtable)
         reads = sorted(os.listdir(G_OTUtable))
-        df_ref = pd.read_excel(ref)
+        df_ref = pd.read_excel(self.config["ref_path"])
 
         for n, i in zip(range(0, len(txts)), range(1, len(reads), 2), strict=False):
             if txts[n].endswith(".txt"):
