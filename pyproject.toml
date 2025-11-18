@@ -1,5 +1,5 @@
 [project]
-name = "trim2sort-ver3-0-0"
+name = "trim2sort"
 version = "0.1.0"
 description = "一個用於 DNA 序列分析的圖形化使用者介面（GUI）應用程式，支援 Sanger 定序與次世代定序（NGS）資料處理與分析"
 readme = "README.md"

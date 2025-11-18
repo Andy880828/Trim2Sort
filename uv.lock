@@ -415,7 +415,7 @@ wheels = [
 ]
 
 [[package]]
-name = "trim2sort-ver3-0-0"
+name = "trim2sort"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

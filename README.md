@@ -1,4 +1,4 @@
-# Trim2Sort ver3.0.0
+# Trim2Sort
 
 一個用於 DNA 序列分析的圖形化使用者介面（GUI）應用程式，支援 Sanger 定序與次世代定序（NGS）資料處理與分析。
 
@@ -23,8 +23,8 @@
 1. **複製專案**
 
    ```bash
-   git clone [repository-url]
-   cd Trim2Sort_ver3.0.0
+   git clone https://github.com/Andy880828/Trim2Sort.git
+   cd Trim2Sort
    ```
 
 2. **安裝 Python 依賴套件**
@@ -42,7 +42,7 @@
    視情況可更新，
    cutadapt 後期版本就不提供 .exe ，目前的 4.0 應為最後版本，故不用更新。
    usearch 可至官網 https://www.drive5.com/usearch/ 下載新版本後丟進根目錄請改名為 usearch.exe。
-   blastn 為 NCBI blast+ 軟體的一部分，可至 https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ 下載windows可安裝檔，安裝後將整個資料夾(名稱如 blast-2.17.0+ )拉入根目錄後改名為blast+即可。
+   blastn 為 NCBI blast+ 軟體的一部分，可至 https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ 下載 windows 可安裝檔，安裝後將整個資料夾(名稱如 blast-2.17.0+ )拉入根目錄後改名為 blast+即可。
 
 ## 使用方法
 
@@ -98,7 +98,7 @@ uv run main.py
 ## 專案結構
 
 ```
-Trim2Sort_ver3.0.0/
+Trim2Sort/
 ├── main.py                 # 主程式入口
 ├── ngs.py                  # NGS 分析模組
 ├── sanger.py               # Sanger 分析模組
@@ -134,7 +134,7 @@ Trim2Sort_ver3.0.0/
 
 ## 版本歷史
 
-**2025/11以前的更新紀錄可參考"更新日誌(read me).txt"**
+**2025/11 以前的更新紀錄可參考"更新日誌(read me).txt"**
 
 ### 主要更新（v3.0.0）
 

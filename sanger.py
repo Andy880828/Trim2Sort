@@ -11,7 +11,8 @@ import pandas as pd
 from Bio import SeqIO
 from PIL import Image
 
-my_image = customtkinter.CTkImage(light_image=Image.open("Trim2Sort_icon.png"), size=(128, 72))
+my_image = customtkinter.CTkImage(
+    light_image=Image.open("Trim2Sort_icon.png"), size=(128, 72))
 
 
 def find_latest_ref_file():
@@ -81,7 +82,8 @@ class Sanger_HeaderFrame(customtkinter.CTkFrame):
         )
         self.button_UserGuide.grid(row=1, column=0, padx=10)
         self.sep_label = customtkinter.CTkLabel(master=self)
-        self.sep_label.configure(text="✦", text_color="#88A9C3", font=("Consolas", 10, "bold"))
+        self.sep_label.configure(
+            text="✦", text_color="#88A9C3", font=("Consolas", 10, "bold"))
         self.sep_label.grid(row=1, column=1, padx=10)
         self.button_Documentation = customtkinter.CTkButton(master=self)
         self.button_Documentation.configure(
@@ -96,7 +98,8 @@ class Sanger_HeaderFrame(customtkinter.CTkFrame):
         )
         self.button_Documentation.grid(row=1, column=2, padx=10)
         self.sep_label = customtkinter.CTkLabel(master=self)
-        self.sep_label.configure(text="✦", text_color="#88A9C3", font=("Consolas", 10, "bold"))
+        self.sep_label.configure(
+            text="✦", text_color="#88A9C3", font=("Consolas", 10, "bold"))
         self.sep_label.grid(row=1, column=3, padx=10)
         self.button_ContactUs = customtkinter.CTkButton(self)
         self.button_ContactUs.configure(
@@ -120,10 +123,14 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
         self.samples_path = tk.StringVar()
         self.outputs_path = tk.StringVar()
 
-        database_info = tk.StringVar(value="Step1: Select the folder directory of Database")
-        samples_info = tk.StringVar(value="Step2: Select the folder directory of Samples")
-        outputs_info = tk.StringVar(value="Step3: Select the folder directory of Outputs")
-        instruction = tk.StringVar(value="Start the app after everthing above is selected")
+        database_info = tk.StringVar(
+            value="Step1: Select the folder directory of Database")
+        samples_info = tk.StringVar(
+            value="Step2: Select the folder directory of Samples")
+        outputs_info = tk.StringVar(
+            value="Step3: Select the folder directory of Outputs")
+        instruction = tk.StringVar(
+            value="Start the app after everthing above is selected")
 
         self.database_info = customtkinter.CTkLabel(master=self)
         self.database_info.configure(
@@ -147,7 +154,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             dropdown_font=("Consolas", 12, "bold"),
         )
         self.database_combobox.set("Database")
-        self.database_combobox.grid(row=1, column=0, padx=0, pady=(0, 10), sticky="w")
+        self.database_combobox.grid(
+            row=1, column=0, padx=0, pady=(0, 10), sticky="w")
 
         self.samples_info = customtkinter.CTkLabel(self)
         self.samples_info.configure(
@@ -166,7 +174,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             fg_color="#2B4257",
             font=("Consolas", 12, "bold"),
         )
-        self.samples_entry.grid(row=3, column=0, padx=0, pady=(0, 10), sticky="w")
+        self.samples_entry.grid(row=3, column=0, padx=0,
+                                pady=(0, 10), sticky="w")
         self.samples_button = customtkinter.CTkButton(self)
         self.samples_button.configure(
             width=80,
@@ -180,7 +189,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             font=("Consolas", 11, "bold"),
             command=self.BrowseSamples,
         )
-        self.samples_button.grid(row=3, column=1, padx=(10, 0), pady=(0, 10), sticky="w")
+        self.samples_button.grid(row=3, column=1, padx=(
+            10, 0), pady=(0, 10), sticky="w")
 
         self.outputs_info = customtkinter.CTkLabel(self)
         self.outputs_info.configure(
@@ -199,7 +209,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             fg_color="#2B4257",
             font=("Consolas", 12, "bold"),
         )
-        self.outputs_entry.grid(row=5, column=0, padx=0, pady=(0, 10), sticky="w")
+        self.outputs_entry.grid(row=5, column=0, padx=0,
+                                pady=(0, 10), sticky="w")
         self.outputs_button = customtkinter.CTkButton(self)
         self.outputs_button.configure(
             width=80,
@@ -213,7 +224,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             font=("Consolas", 11, "bold"),
             command=self.BrowseOutputs,
         )
-        self.outputs_button.grid(row=5, column=1, padx=(10, 0), pady=(0, 10), sticky="w")
+        self.outputs_button.grid(row=5, column=1, padx=(
+            10, 0), pady=(0, 10), sticky="w")
 
         self.instruction_label = customtkinter.CTkLabel(self)
         self.instruction_label.configure(
@@ -235,7 +247,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             font=("Consolas", 11, "bold"),
             command=self.Analysis,
         )
-        self.instruction_button.grid(row=7, column=0, columnspan=2, padx=0, sticky="ew")
+        self.instruction_button.grid(
+            row=7, column=0, columnspan=2, padx=0, sticky="ew")
 
     def BrowseSamples(self):
         foldername = filedialog.askdirectory()
@@ -286,27 +299,34 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
                         SeqIO.write(record, output_handle, "fastq")
 
         # trim sequences
-        trimmomatic_path = (
-            "D:/Trim2Sort_ver3.0.0/Trimmomatic-0.39/Trimmomatic-0.39/trimmomatic-0.39.jar"
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        trimmomatic_path = os.path.join(
+            root_dir, "Trimmomatic-0.39", "Trimmomatic-0.39", "trimmomatic-0.39.jar"
         )
-        trimming_cmd = f"{trimmomatic_path} SE -phred33 -trimlog {trimlog} {merged_fastq} {trimmed_fastq} ILLUMINACLIP:{primer}:3:30:10 LEADING:30 TRAILING:30"
+        primer_path = os.path.join(
+            root_dir, "Trimmomatic-0.39", "Trimmomatic-0.39", "adapters", primer
+        )
+        trimming_cmd = f"{trimmomatic_path} SE -phred33 -trimlog {trimlog} {merged_fastq} {trimmed_fastq} ILLUMINACLIP:{primer_path}:3:30:10 LEADING:30 TRAILING:30"
         subprocess.run(trimming_cmd, shell=True)
 
         with open(trimmed_fasta, "w") as output_handle:
             for record in SeqIO.parse(trimmed_fastq, "fastq"):
                 SeqIO.write(record, output_handle, "fasta")
 
+        blastn_exe = os.path.join(root_dir, "blast+", "bin", "blastn.exe")
         if self.database_combobox.get() == "Teleostei-12S":
-            os.chdir("./db-12S/")
+            db_path = os.path.join(root_dir, "db-12S")
+            os.chdir(db_path)
             blast_cmd = (
-                f"blastn.exe -query {trimmed_fasta} -out {blasted_txt}"
+                f'"{blastn_exe}" -query {trimmed_fasta} -out {blasted_txt}'
                 f' -db 12S_Osteichthyes_db -outfmt "6 qseqid pident qcovs sscinames sacc qlen" -max_target_seqs 1'
             )
             subprocess.run(blast_cmd, shell=True)
         elif self.database_combobox.get() == "Teleostei-COI":
-            os.chdir("./db-CO1/")
+            db_path = os.path.join(root_dir, "db-CO1")
+            os.chdir(db_path)
             blast_cmd = (
-                f"blastn.exe -query {trimmed_fasta} -out {blasted_txt}"
+                f'"{blastn_exe}" -query {trimmed_fasta} -out {blasted_txt}'
                 f' -db CO1_Osteichthyes_db -outfmt "6 qseqid pident qcovs sscinames sacc qlen" -max_target_seqs 1'
             )
             subprocess.run(blast_cmd, shell=True)
@@ -335,11 +355,13 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
             blasted_txt,
             header=None,
             sep="\t",
-            names=["No", "Identity", "Coverage", "Scientific_name", "Accession_number", "bp"],
+            names=["No", "Identity", "Coverage",
+                   "Scientific_name", "Accession_number", "bp"],
         )
         concatresult = pd.concat([dataset, blastresult])
         # concatresult = concatresult.style.apply(Highlight, axis=1)
-        concatresult.to_excel(f"{output_name}_result.xlsx", engine="openpyxl", index=False)
+        concatresult.to_excel(f"{output_name}_result.xlsx",
+                              engine="openpyxl", index=False)
 
         old_file_name = f"{output_name}_result.xlsx"
         new_file_name = (
@@ -353,7 +375,8 @@ class Sanger_ContentFrame(customtkinter.CTkFrame):
         df_input = pd.read_excel(new_file_name)
         df_input.set_index("Scientific_name", inplace=True)
         output_file_path = new_file_name.split(".xlsx")[0] + "_zh.xlsx"
-        df_ref_merged = pd.merge(df_input, df_ref, left_index=True, right_index=True, how="left")
+        df_ref_merged = pd.merge(
+            df_input, df_ref, left_index=True, right_index=True, how="left")
         df_ref_merged.insert(3, "Scientific_name", df_ref_merged.index)
         df_ref_merged = df_ref_merged.sort_values(by="No")
         df_ref_merged.to_excel(output_file_path, index=False)

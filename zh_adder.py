@@ -3,9 +3,27 @@ import os
 
 import pandas as pd
 
-input_folder = "D:\\Trim2Sort_ver3.0.0\\outputs\\I_sorted_blasts"
-output_folder = "D:\\Trim2Sort_ver3.0.0\\outputs\\TEST\\"
-ref = "D:\\Trim2Sort_ver3.0.0\\ref_ver3_0408-3.xlsx"
+
+def find_latest_ref_file():
+    """尋找最新的 ref_ 開頭的 xlsx 檔案"""
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    ref_files = []
+    for file in os.listdir(root_dir):
+        if file.startswith("ref_") and file.endswith(".xlsx"):
+            file_path = os.path.join(root_dir, file)
+            ref_files.append((file_path, os.path.getmtime(file_path)))
+
+    if ref_files:
+        # 根據修改時間排序, 返回最新的
+        ref_files.sort(key=lambda x: x[1], reverse=True)
+        return ref_files[0][0]
+    return ""
+
+
+root_dir = os.path.dirname(os.path.abspath(__file__))
+input_folder = os.path.join(root_dir, "outputs", "I_sorted_blasts")
+output_folder = os.path.join(root_dir, "outputs", "TEST")
+ref = find_latest_ref_file()
 
 
 class zh_adder:
@@ -14,7 +32,8 @@ class zh_adder:
         self.output_folder = output_folder
         self.Sample_Name = fnmatch.filter(os.listdir(input_folder), "*.xlsx")
         self.Sample_Size = len(self.Sample_Name)
-        self.Output_Name = os.path.join(output_folder, str(self.Sample_Name) + "_zh_added.xlsx")
+        self.Output_Name = os.path.join(
+            output_folder, str(self.Sample_Name) + "_zh_added.xlsx")
 
     def zh_adding(self):
         df_ref = pd.read_excel(ref)
