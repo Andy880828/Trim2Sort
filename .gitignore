@@ -24,3 +24,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# 其他
+.cursor/
+
+# 日誌檔案
+logs/
+*.log
+

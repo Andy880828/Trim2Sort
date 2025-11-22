@@ -1,6 +1,10 @@
 @echo off
 cd /d "%~dp0"
 
+REM 清除可能存在的舊虛擬環境變數，避免與其他專案衝突
+set VIRTUAL_ENV=
+set VENV_DIR=
+
 echo Checking if uv is installed...
 where uv >nul 2>nul
 
@@ -13,6 +17,6 @@ echo Adding module...
 uv sync
 
 echo Running program with uv...
-uv run main.py
+uv run python -m src.main
 
 pause

@@ -11,7 +11,7 @@
 
 ## 系統需求
 
-- **作業系統**：Windows
+- **作業系統**：限 Windows
 - **Python 版本**：>= 3.12
 - **必要工具**：
   - `cutadapt.exe`（已包含在專案中）
@@ -51,7 +51,13 @@
 執行 `execute(開啟請按我).bat` 或直接執行：
 
 ```bash
-uv run main.py
+uv run python -m src.main
+```
+
+### 格式化方式
+
+```bash
+run ruff check --fix [path]
 ```
 
 ### NGS 分析流程
