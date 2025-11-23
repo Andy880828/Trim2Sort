@@ -790,7 +790,9 @@ class NGSContentFrame(customtkinter.CTkFrame):
             messagebox.showerror("Error", "Samples or outputs folder does not exist")
             return
 
-        input_files = natsort.natsorted(list(samples_dir.iterdir()))
+        input_files = natsort.natsorted(
+            [f for f in samples_dir.iterdir() if f.is_file() and f.suffix.lower() == ".fastq"]
+        )
         sample_size = len(input_files) // 2
 
         if sample_size == 0:

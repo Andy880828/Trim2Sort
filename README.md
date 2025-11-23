@@ -54,6 +54,12 @@
 uv run python -m src.main
 ```
 
+### 使用建庫腳本 (make_blastndb_helper)
+
+```bash
+uv run python scripts/make_blastndb_helper.py
+```
+
 ### 格式化方式
 
 ```bash
