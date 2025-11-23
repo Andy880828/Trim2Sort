@@ -902,53 +902,73 @@ class NGSProcessor:
         """
         logger.info("開始 NGS 分析")
 
+        logger.info(f"步驟 1/9: 修剪 Primers (共 {sample_size} 個樣本)")
         for i in range(0, sample_size * 2, 2):
             self._trim_primers(samples_dir, input_files[i].name, input_files[i + 1].name)
+        gc.collect()
 
         primer_trimming_files = natsort.natsorted(
             [f for f in self.folders["A_primer_trimming"].iterdir() if f.is_file()]
         )
 
+        logger.info(f"步驟 2/9: 合併配對序列 (共 {sample_size} 個樣本)")
         for i in range(0, sample_size * 2, 2):
             self._merge_pairs(primer_trimming_files[i].name, primer_trimming_files[i + 1].name)
+        gc.collect()
 
         merged_files = natsort.natsorted(list(self.folders["B_merged"].iterdir()))
 
+        logger.info(f"步驟 3/9: 品質控制 (共 {len(merged_files)} 個檔案)")
         for merged_file in merged_files:
             self._quality_control(merged_file.name)
+        gc.collect()
 
         qualified_files = natsort.natsorted(list(self.folders["C_quality"].iterdir()))
 
+        logger.info(f"步驟 4/9: 過濾長度 (共 {len(qualified_files)} 個檔案)")
         for qualified_file in qualified_files:
             self._filter_length(qualified_file.name)
+        gc.collect()
 
         length_files = natsort.natsorted(list(self.folders["D_length"].iterdir()))
         adjusted_sample_size = len(length_files)
 
+        logger.info(f"步驟 5/9: 聚類序列 (共 {adjusted_sample_size} 個檔案)")
         for length_file in length_files:
             self._cluster(length_file.name)
+        gc.collect()
 
         uniques_files = natsort.natsorted(list(self.folders["E_uniques"].iterdir()))
 
+        logger.info(f"步驟 6/9: 建立 OTU (共 {len(uniques_files)} 個檔案)")
         for uniques_file in uniques_files:
             self._create_otu(uniques_file.name)
+        gc.collect()
 
         otu_files = natsort.natsorted(list(self.folders["F_OTUs"].iterdir()))
 
+        logger.info(f"步驟 7/9: 建立 OTU 表格 (共 {len(otu_files)} 個檔案)")
         for merged_file, otu_file in zip(merged_files, otu_files, strict=False):
             self._create_otu_table(merged_file.name, otu_file.name)
+        gc.collect()
 
         otu_table_files = natsort.natsorted(list(self.folders["G_OTUtable"].iterdir()))
 
+        logger.info(f"步驟 8/9: 重新命名 OTU 表格 (共 {len(otu_table_files) // 2} 個檔案)")
         for i in range(1, adjusted_sample_size * 2 + 1, 2):
             self._rename_otu_table(otu_table_files[i].name)
+        gc.collect()
 
         otu_files = natsort.natsorted(list(self.folders["F_OTUs"].iterdir()))
 
+        logger.info(f"步驟 9/9: 執行 BLAST (共 {len(otu_files)} 個檔案)")
         for otu_file in otu_files:
             self._run_blast(otu_file.name)
+        gc.collect()
 
+        logger.info("合併 BLAST 結果")
         self._combine_blast_results()
+        gc.collect()
 
         logger.info("NGS 分析完成")
 
@@ -962,6 +982,7 @@ class NGSProcessor:
             r1 (str): R1 檔案名稱 / R1 file name.
             r2 (str): R2 檔案名稱 / R2 file name.
         """
+        logger.info(f"修剪 Primers: {r1} / {r2}")
         forward = self.config.forward_primer
         reverse = self.config.reverse_primer
         rev_comp_forward = reverse_complement(forward)
@@ -991,6 +1012,7 @@ class NGSProcessor:
             str(samples_dir / r2),
         ]
         run_command(trimming_cmd)
+        logger.info(f"完成修剪 Primers: {r1} / {r2}")
 
     def _merge_pairs(self, r1: str, r2: str) -> None:
         """合併配對序列
@@ -1001,6 +1023,7 @@ class NGSProcessor:
             r1 (str): R1 檔案名稱 / R1 file name.
             r2 (str): R2 檔案名稱 / R2 file name.
         """
+        logger.info(f"合併配對序列: {r1} / {r2}")
         primer_trimming_dir = self.folders["A_primer_trimming"]
         merged_dir = self.folders["B_merged"]
 
@@ -1014,6 +1037,7 @@ class NGSProcessor:
             str(merged_dir / f"{r1}_merged.fastq"),
         ]
         run_command(merging_cmd)
+        logger.info(f"完成合併配對序列: {r1}")
 
     def _quality_control(self, file: str) -> None:
         """品質控制
@@ -1023,6 +1047,7 @@ class NGSProcessor:
         Args:
             file (str): 檔案名稱 / File name.
         """
+        logger.info(f"品質控制: {file}")
         merged_dir = self.folders["B_merged"]
         quality_dir = self.folders["C_quality"]
         quality_threshold = self.config.quality_threshold
@@ -1037,6 +1062,7 @@ class NGSProcessor:
             str(quality_dir / f"{file}_QUAL.fastq"),
         ]
         run_command(qualifying_cmd)
+        logger.info(f"完成品質控制: {file}")
 
     def _filter_length(self, file: str) -> None:
         """過濾長度
@@ -1046,6 +1072,7 @@ class NGSProcessor:
         Args:
             file (str): 檔案名稱 / File name.
         """
+        logger.info(f"過濾長度: {file}")
         quality_dir = self.folders["C_quality"]
         length_dir = self.folders["D_length"]
         length_threshold = self.config.length_threshold
@@ -1060,6 +1087,7 @@ class NGSProcessor:
             str(length_dir / f"{file}_LENG.fasta"),
         ]
         run_command(length_filtering_cmd)
+        logger.info(f"完成過濾長度: {file}")
 
     def _cluster(self, file: str) -> None:
         """聚類序列
@@ -1069,6 +1097,7 @@ class NGSProcessor:
         Args:
             file (str): 檔案名稱 / File name.
         """
+        logger.info(f"聚類序列: {file}")
         length_dir = self.folders["D_length"]
         uniques_dir = self.folders["E_uniques"]
 
@@ -1083,6 +1112,7 @@ class NGSProcessor:
             "Uniq",
         ]
         run_command(clustering_cmd)
+        logger.info(f"完成聚類序列: {file}")
 
     def _create_otu(self, file: str) -> None:
         """建立 OTU
@@ -1092,6 +1122,7 @@ class NGSProcessor:
         Args:
             file (str): 檔案名稱 / File name.
         """
+        logger.info(f"建立 OTU: {file}")
         uniques_dir = self.folders["E_uniques"]
         otu_dir = self.folders["F_OTUs"]
 
@@ -1103,6 +1134,7 @@ class NGSProcessor:
             str(otu_dir / f"{file}_ZOTU.fasta"),
         ]
         run_command(otu_making_cmd)
+        logger.info(f"完成建立 OTU: {file}")
 
     def _create_otu_table(self, merged_file: str, otu_file: str) -> None:
         """建立 OTU 表格
@@ -1113,6 +1145,7 @@ class NGSProcessor:
             merged_file (str): 合併檔案名稱 / Merged file name.
             otu_file (str): OTU 檔案名稱 / OTU file name.
         """
+        logger.info(f"建立 OTU 表格: {otu_file}")
         merged_dir = self.folders["B_merged"]
         otu_dir = self.folders["F_OTUs"]
         otu_table_dir = self.folders["G_OTUtable"]
@@ -1129,6 +1162,7 @@ class NGSProcessor:
             str(otu_table_dir / f"{otu_file}_map.txt"),
         ]
         run_command(otu_tab_making_cmd)
+        logger.info(f"完成建立 OTU 表格: {otu_file}")
 
     def _rename_otu_table(self, file: str) -> None:
         """重新命名 OTU 表格
@@ -1138,10 +1172,12 @@ class NGSProcessor:
         Args:
             file (str): 檔案名稱 / File name.
         """
+        logger.info(f"重新命名 OTU 表格: {file}")
         otu_table_dir = self.folders["G_OTUtable"]
         old_file = otu_table_dir / file
         new_name = otu_table_dir / f"{Path(file).stem}.txt"
         old_file.rename(new_name)
+        logger.info(f"完成重新命名 OTU 表格: {file} -> {new_name.name}")
 
     def _run_blast(self, file: str) -> None:
         """執行 BLAST
@@ -1151,6 +1187,7 @@ class NGSProcessor:
         Args:
             file (str): 檔案名稱 / File name.
         """
+        logger.info(f"執行 BLAST: {file}")
         otu_dir = self.folders["F_OTUs"]
         blast_dir = self.folders["H_blasts"]
         db_display_name = self.database_selector
@@ -1174,12 +1211,14 @@ class NGSProcessor:
             "3",
         ]
         run_command(blast_cmd, cwd=self.database_path)
+        logger.info(f"完成執行 BLAST: {file}")
 
     def _combine_blast_results(self) -> None:
         """合併 BLAST 結果
 
         Combine BLAST results.
         """
+        logger.info("開始合併 BLAST 結果")
         blast_dir = self.folders["H_blasts"]
         otu_table_dir = self.folders["G_OTUtable"]
         sorted_blasts_dir = self.folders["I_sorted_blasts"]
@@ -1198,8 +1237,13 @@ class NGSProcessor:
             logger.error(f"讀取參考檔案失敗: {e}")
             return
 
+        logger.info(f"開始處理 {len(blast_files)} 個 BLAST 結果檔案")
         for blast_file, otu_table_file in zip(blast_files, otu_table_files[1::2], strict=False):
             self._process_single_blast_result(blast_file, otu_table_file, df_ref, sorted_blasts_dir)
+            gc.collect()
+        logger.info(f"完成合併 BLAST 結果 (共處理 {len(blast_files)} 個檔案)")
+        del df_ref
+        gc.collect()
 
     def _process_single_blast_result(
         self,
@@ -1318,10 +1362,27 @@ class NGSProcessor:
             with pd.ExcelWriter(excel_path2, engine="openpyxl") as writer:
                 final_zh_csv_styled.to_excel(writer, index=False, sheet_name="Sheet1")
 
-            del final_csv_styled, final_zh_csv_styled
+            del (
+                original_data,
+                reads_data,
+                grouped_otu,
+                drop_filtered,
+                drop_dupe,
+                clean_data,
+                csv_data,
+                main_data,
+                filtered_with_reads,
+                filtered_without_reads,
+                all_filtered,
+                final_csv,
+                final_zh_csv,
+                final_csv_styled,
+                final_zh_csv_styled,
+            )
             gc.collect()
 
             logger.info(f"已處理 BLAST 結果: {blast_file.name}")
 
         except Exception as e:
             logger.error(f"處理 BLAST 結果失敗 {blast_file.name}: {e}")
+            gc.collect()
