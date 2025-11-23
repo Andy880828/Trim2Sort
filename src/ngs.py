@@ -744,14 +744,17 @@ class NGSContentFrame(customtkinter.CTkFrame):
                 "Warning", "no taxdb.btd & taxdb.bti files found, scientific name will be N/A"
             )
 
-        fasta_files = []
+        database_files = []
         for file_path in db_path.iterdir():
-            if file_path.is_file() and file_path.suffix in (".fasta", ".fas"):
-                fasta_files.append(file_path.stem)
+            if file_path.is_file():
+                if file_path.suffix == ".nal":
+                    database_files.append(f"(Combined) {file_path.stem}")
+                elif file_path.suffix in (".fasta", ".fas"):
+                    database_files.append(file_path.stem)
 
-        if fasta_files:
-            self.database_selector_combo.configure(values=fasta_files)
-            self.database_selector.set(fasta_files[0])
+        if database_files:
+            self.database_selector_combo.configure(values=database_files)
+            self.database_selector.set(database_files[0])
         else:
             self.database_selector_combo.configure(values=[])
             self.database_selector.set("")
@@ -1148,7 +1151,12 @@ class NGSProcessor:
         """
         otu_dir = self.folders["F_OTUs"]
         blast_dir = self.folders["H_blasts"]
-        db_name = self.database_selector
+        db_display_name = self.database_selector
+        # 如果資料庫名稱以 "(Combined) " 開頭, 則去掉前綴以獲取實際資料庫名稱
+        if db_display_name.startswith("(Combined) "):
+            db_name = db_display_name.replace("(Combined) ", "", 1)
+        else:
+            db_name = db_display_name
 
         blast_cmd = [
             self.blastn_path,
