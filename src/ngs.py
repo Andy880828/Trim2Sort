@@ -1402,8 +1402,10 @@ class NGSProcessor:
             final_csv_styled = final_csv.style.apply(highlight_row, axis=1)
             final_zh_csv_styled = final_zh_csv.style.apply(highlight_row, axis=1)
 
-            excel_path1 = sorted_blasts_dir / f"{otu_table_file.stem}.xlsx"
-            excel_path2 = sorted_blasts_dir / f"{otu_table_file.stem}_zh_added.xlsx"
+            # 使用 "." 分割檔案名稱, 取 [0] 作為樣本名稱
+            sample_name = otu_table_file.stem.split(".")[0]
+            excel_path1 = sorted_blasts_dir / f"{sample_name}.xlsx"
+            excel_path2 = sorted_blasts_dir / f"{sample_name}_zh_added.xlsx"
 
             with pd.ExcelWriter(excel_path1, engine="openpyxl") as writer:
                 final_csv_styled.to_excel(writer, index=False, sheet_name="Sheet1")
