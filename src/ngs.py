@@ -6,6 +6,7 @@ NGS (Next Generation Sequencing) analysis module.
 from collections.abc import Sequence
 import gc
 from pathlib import Path
+import re
 import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -456,8 +457,8 @@ class NGSContentFrame(customtkinter.CTkFrame):
 
         self.config = NGSConfig()
 
-        self._auto_detect_tools()
         self._setup_ui()
+        self._auto_detect_tools()
 
     def _auto_detect_tools(self) -> None:
         """自動偵測工具路徑
@@ -474,6 +475,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
             self.usearch_path.set(str(usearch_exe))
         if blastn_exe.exists():
             self.blastn_path.set(str(blastn_exe))
+        self._check_fields()
 
     def _setup_ui(self) -> None:
         """設定使用者介面
@@ -574,7 +576,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
 
         row += 2
 
-        database_selector_info = tk.StringVar(value="Select Database File (.fasta/.fas)")
+        database_selector_info = tk.StringVar(value="Select Database File (.nal/.ndb)")
         database_selector_info_label = customtkinter.CTkLabel(
             self,
             textvariable=database_selector_info,
@@ -675,7 +677,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         )
         config_button.grid(row=row, column=0, padx=(0, 5), sticky="ew")
 
-        analyse_button = customtkinter.CTkButton(
+        self.analyse_button = customtkinter.CTkButton(
             self,
             height=LAYOUT.BUTTON_HEIGHT,
             border_width=0,
@@ -686,8 +688,45 @@ class NGSContentFrame(customtkinter.CTkFrame):
             hover_color=COLORS.ACCENT_HOVER,
             font=(FONTS.FAMILY, FONTS.SIZE_NORMAL, FONTS.STYLE_BOLD),
             command=self.analyse,
+            state="disabled",
         )
-        analyse_button.grid(row=row, column=1, padx=(5, 0), sticky="ew")
+        self.analyse_button.grid(row=row, column=1, padx=(5, 0), sticky="ew")
+
+        self._setup_field_validation()
+
+    def _setup_field_validation(self) -> None:
+        """設定欄位驗證
+
+        Setup field validation.
+        """
+        self.cutadapt_path.trace_add("write", lambda *_args: self._check_fields())
+        self.usearch_path.trace_add("write", lambda *_args: self._check_fields())
+        self.blastn_path.trace_add("write", lambda *_args: self._check_fields())
+        self.database_path.trace_add("write", lambda *_args: self._check_fields())
+        self.database_selector.trace_add("write", lambda *_args: self._check_fields())
+        self.samples_path.trace_add("write", lambda *_args: self._check_fields())
+        self.outputs_path.trace_add("write", lambda *_args: self._check_fields())
+        self._check_fields()
+
+    def _check_fields(self) -> None:
+        """檢查所有必要欄位是否已填寫
+
+        Check if all required fields are filled.
+        """
+        all_filled = (
+            bool(self.cutadapt_path.get())
+            and bool(self.usearch_path.get())
+            and bool(self.blastn_path.get())
+            and bool(self.database_path.get())
+            and bool(self.database_selector.get())
+            and bool(self.samples_path.get())
+            and bool(self.outputs_path.get())
+        )
+
+        if all_filled:
+            self.analyse_button.configure(state="normal")
+        else:
+            self.analyse_button.configure(state="disabled")
 
     def open_config(self) -> None:
         """開啟配置視窗
@@ -705,6 +744,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         filename = filedialog.askopenfilenames()
         if filename:
             self.cutadapt_path.set(filename[0] if isinstance(filename, tuple) else filename)
+        self._check_fields()
 
     def browse_usearch(self) -> None:
         """瀏覽選擇 Usearch 執行檔
@@ -714,6 +754,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         filename = filedialog.askopenfilenames()
         if filename:
             self.usearch_path.set(filename[0] if isinstance(filename, tuple) else filename)
+        self._check_fields()
 
     def browse_blastn(self) -> None:
         """瀏覽選擇 Blastn 執行檔
@@ -723,6 +764,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         filename = filedialog.askopenfilenames()
         if filename:
             self.blastn_path.set(filename[0] if isinstance(filename, tuple) else filename)
+        self._check_fields()
 
     def browse_database(self) -> None:
         """瀏覽選擇資料庫資料夾
@@ -749,8 +791,12 @@ class NGSContentFrame(customtkinter.CTkFrame):
             if file_path.is_file():
                 if file_path.suffix == ".nal":
                     database_files.append(f"(Combined) {file_path.stem}")
-                elif file_path.suffix in (".fasta", ".fas"):
-                    database_files.append(file_path.stem)
+                elif file_path.suffix == ".ndb":
+                    # 過濾掉附屬檔案 (如 .00.ndb, .01.ndb 等)
+                    # 只保留純正的 .ndb 檔案 (不以 .XX.ndb 結尾)
+                    file_name = file_path.name
+                    if not re.search(r"\.\d{2}\.ndb$", file_name):
+                        database_files.append(file_path.stem)
 
         if database_files:
             self.database_selector_combo.configure(values=database_files)
@@ -758,6 +804,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         else:
             self.database_selector_combo.configure(values=[])
             self.database_selector.set("")
+        self._check_fields()
 
     def browse_samples(self) -> None:
         """瀏覽選擇樣本資料夾
@@ -767,6 +814,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         foldername = filedialog.askdirectory()
         if foldername:
             self.samples_path.set(foldername)
+        self._check_fields()
 
     def browse_outputs(self) -> None:
         """瀏覽選擇輸出資料夾
@@ -776,6 +824,7 @@ class NGSContentFrame(customtkinter.CTkFrame):
         foldername = filedialog.askdirectory()
         if foldername:
             self.outputs_path.set(foldername)
+        self._check_fields()
 
     def analyse(self) -> None:
         """執行 NGS 分析

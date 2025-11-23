@@ -262,7 +262,7 @@ class SangerContentFrame(customtkinter.CTkFrame):
         )
         instruction_label.grid(row=6, column=0, columnspan=2, padx=0, pady=(10, 0), sticky="ew")
 
-        instruction_button = customtkinter.CTkButton(
+        self.analyse_button = customtkinter.CTkButton(
             self,
             width=80,
             height=LAYOUT.BUTTON_HEIGHT,
@@ -274,8 +274,38 @@ class SangerContentFrame(customtkinter.CTkFrame):
             hover_color=COLORS.HOVER_BG,
             font=(FONTS.FAMILY, FONTS.SIZE_NORMAL, FONTS.STYLE_BOLD),
             command=self.analysis,
+            state="disabled",
         )
-        instruction_button.grid(row=7, column=0, columnspan=2, padx=0, sticky="ew")
+        self.analyse_button.grid(row=7, column=0, columnspan=2, padx=0, sticky="ew")
+
+        self._setup_field_validation()
+
+    def _setup_field_validation(self) -> None:
+        """設定欄位驗證
+
+        Setup field validation.
+        """
+        self.database_combobox.configure(command=lambda _choice: self._check_fields())
+        self.samples_path.trace_add("write", lambda *_args: self._check_fields())
+        self.outputs_path.trace_add("write", lambda *_args: self._check_fields())
+        self._check_fields()
+
+    def _check_fields(self) -> None:
+        """檢查所有必要欄位是否已填寫
+
+        Check if all required fields are filled.
+        """
+        database_choice = self.database_combobox.get()
+        all_filled = (
+            database_choice != "Database"
+            and bool(self.samples_path.get())
+            and bool(self.outputs_path.get())
+        )
+
+        if all_filled:
+            self.analyse_button.configure(state="normal")
+        else:
+            self.analyse_button.configure(state="disabled")
 
     def browse_samples(self) -> None:
         """瀏覽選擇樣本資料夾
@@ -285,6 +315,7 @@ class SangerContentFrame(customtkinter.CTkFrame):
         foldername = filedialog.askdirectory()
         if foldername:
             self.samples_path.set(foldername)
+        self._check_fields()
 
     def browse_outputs(self) -> None:
         """瀏覽選擇輸出資料夾
@@ -294,6 +325,7 @@ class SangerContentFrame(customtkinter.CTkFrame):
         foldername = filedialog.askdirectory()
         if foldername:
             self.outputs_path.set(foldername)
+        self._check_fields()
 
     def analysis(self) -> None:
         """執行 Sanger 分析
