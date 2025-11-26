@@ -31,3 +31,5 @@ Thumbs.db
 logs/
 *.log
 
+# R 相關
+.renv/
