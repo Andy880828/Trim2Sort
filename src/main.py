@@ -6,7 +6,7 @@ Trim2Sort main application.
 import customtkinter
 from PIL import Image
 
-from src.ngs import NGS
+from src.ngs_method_selector import NGSMethodSelector
 from src.sanger import Sanger
 from src.utils.logger_utils import init_logger
 from src.utils.path_utils import get_icon_path, get_project_root
@@ -116,7 +116,7 @@ class App(customtkinter.CTk):
         Open NGS analysis window.
         """
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = NGS(self)
+            self.toplevel_window = NGSMethodSelector(self)
         else:
             self.toplevel_window.focus()
 

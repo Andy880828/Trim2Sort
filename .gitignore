@@ -31,3 +31,6 @@ Thumbs.db
 logs/
 *.log
 
+# R 環境
+.renv/
+mamba_root/
