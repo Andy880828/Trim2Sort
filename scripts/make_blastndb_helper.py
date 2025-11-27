@@ -164,15 +164,15 @@ def main() -> None:
     # 輸入參數(檔案路徑需全英文)
     # Input parameters (file paths must be in English only)
     accession2taxid_path = Path(
-        r"C:\Users\Andy\Desktop\Data\database\course\nucl_gb.accession2taxid.gz"
+        r"C:\Users\Andy\Downloads\nucl_gb.accession2taxid.gz"
     )  # 請修改為實際路徑 / Please modify to actual path
     sequence_fasta_path = Path(
-        r"C:\Users\Andy\Desktop\Data\database\course\sequence.fasta"
+        r"C:\Users\Andy\Desktop\0615.fasta"
     )  # 請修改為實際路徑 / Please modify to actual path
     taxdb_path = Path(
-        r"C:\Users\Andy\Desktop\Data\database\course\taxdb.tar.gz"
+        r"C:\Users\Andy\Downloads\taxdb.tar.gz"
     )  # 請修改為實際路徑 / Please modify to actual path
-    title = "12S_Osteichthyes"  # 資料庫標題 / Database title
+    title = "0615"  # 資料庫標題 / Database title
     output_path = Path(
         r"C:\Users\Andy\Desktop\Data\database"
     )  # 請修改為實際路徑 / Please modify to actual path
@@ -248,7 +248,6 @@ def main() -> None:
             return
 
         # makeblastdb 的 -out 參數是資料庫的基礎名稱(不含副檔名)
-        db_name = "database"
         cmd = [
             str(makeblastdb_exe),
             "-in",
@@ -261,7 +260,7 @@ def main() -> None:
             "-taxid_map",
             str(taxidmapfile_path),
             "-out",
-            db_name,
+            title,
         ]
 
         logger.info(f"執行命令: {' '.join(cmd)}")
